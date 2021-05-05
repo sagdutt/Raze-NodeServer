@@ -26,9 +26,9 @@ io.on(CONNECTION, function(socket) {
 	
 	socket.on(PLAYER_READY, function(data) {
 		console.log("Player ready : " + socket.id);
-		socket.broadcast.emit(NEW_PLAYER_CONNECTED, { id: socket.id, character: data.character });
+		socket.broadcast.emit(NEW_PLAYER_CONNECTED, { id: socket.id, character: data.character, name: data.name });
 		socket.emit(GET_PLAYERS, players);
-		players.push(new Player(socket.id, 0, 0, false, "IDLE", data.character));
+		players.push(new Player(socket.id, 0, 0, false, "IDLE", data.character, data.name));
 	});
 
 	socket.on(PLAYER_MOVED, function(data) {
@@ -55,11 +55,12 @@ io.on(CONNECTION, function(socket) {
 	});
 });
 
-function Player(id, x, y, flipX, state, character) {
+function Player(id, x, y, flipX, state, character, name) {
 	this.id = id;
 	this.x = x;
 	this.y = y;
 	this.flipX = flipX;
 	this.state = state;
 	this.character = character;
+	this.name = name;
 }
