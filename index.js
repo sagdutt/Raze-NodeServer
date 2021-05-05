@@ -10,7 +10,8 @@ const SOCKET_ID = 'socketId';
 const NEW_PLAYER_CONNECTED = 'newPlayerConnected';
 const PLAYER_DISCONNECTED = 'playerDisconnected';
 const GET_PLAYERS = 'getPlayers';
-const PLAYED_MOVED = "playerMoved";
+const PLAYER_MOVED = 'playerMoved';
+const PLAYER_READY = 'playerReady';
 
 var players = [];
 
@@ -22,12 +23,17 @@ io.on(CONNECTION, function(socket) {
 	console.log("Player connected");
 	
 	socket.emit(SOCKET_ID, { id: socket.id });
-	socket.broadcast.emit(NEW_PLAYER_CONNECTED, { id: socket.id });
-	socket.emit(GET_PLAYERS, players);
+	
+	socket.on(PLAYER_READY, function(data) {
+		console.log("Player ready : " + socket.id);
+		socket.broadcast.emit(NEW_PLAYER_CONNECTED, { id: socket.id, character: data.character });
+		socket.emit(GET_PLAYERS, players);
+		players.push(new Player(socket.id, 0, 0, false, "IDLE", data.character));
+	});
 
-	socket.on(PLAYED_MOVED, function(data) {
+	socket.on(PLAYER_MOVED, function(data) {
 		data.id = socket.id;
-		socket.broadcast.emit(PLAYED_MOVED, data);
+		socket.broadcast.emit(PLAYER_MOVED, data);
 
 		for (var i = 0; i < players.length; i++) {
 			if (players[i].id == socket.id) {
@@ -47,13 +53,13 @@ io.on(CONNECTION, function(socket) {
 			}
 		}
 	});
-	players.push(new Player(socket.id, 0, 0, false, "IDLE"));
 });
 
-function Player(id, x, y, flipX, state) {
+function Player(id, x, y, flipX, state, character) {
 	this.id = id;
 	this.x = x;
 	this.y = y;
 	this.flipX = flipX;
 	this.state = state;
+	this.character = character;
 }
