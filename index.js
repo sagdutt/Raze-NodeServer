@@ -12,6 +12,10 @@ const PLAYER_DISCONNECTED = 'playerDisconnected';
 const GET_PLAYERS = 'getPlayers';
 const PLAYER_MOVED = 'playerMoved';
 const PLAYER_READY = 'playerReady';
+const PLAYER_DAMAGED = 'playerDamaged';
+const TAKE_DAMAGE = 'takeDamage';
+
+const DEFAULT_ROOM = 'room1'; // TODO: replace with logic for creating rooms
 
 var players = [];
 
@@ -26,14 +30,15 @@ io.on(CONNECTION, function(socket) {
 	
 	socket.on(PLAYER_READY, function(data) {
 		console.log("Player ready : " + socket.id);
-		socket.broadcast.emit(NEW_PLAYER_CONNECTED, { id: socket.id, character: data.character, name: data.name });
+		socket.to(DEFAULT_ROOM).emit(NEW_PLAYER_CONNECTED, { id: socket.id, character: data.character, name: data.name });
 		socket.emit(GET_PLAYERS, players);
+		socket.join(DEFAULT_ROOM);
 		players.push(new Player(socket.id, 0, 0, false, "IDLE", data.character, data.name));
 	});
 
 	socket.on(PLAYER_MOVED, function(data) {
 		data.id = socket.id;
-		socket.broadcast.emit(PLAYER_MOVED, data);
+		socket.to(DEFAULT_ROOM).emit(PLAYER_MOVED, data);
 
 		for (var i = 0; i < players.length; i++) {
 			if (players[i].id == socket.id) {
@@ -43,10 +48,15 @@ io.on(CONNECTION, function(socket) {
 			}
 		}
 	});
+
+	socket.on(PLAYER_DAMAGED, function(data) {
+		console.log("Sending take damage : ", JSON.stringify(data));
+		socket.to(DEFAULT_ROOM).emit(TAKE_DAMAGE, data);
+	});
 	
 	socket.on(DISCONNECT, function() {
 		console.log("Player disconnected");
-		socket.broadcast.emit(PLAYER_DISCONNECTED, { id: socket.id });
+		socket.to(DEFAULT_ROOM).emit(PLAYER_DISCONNECTED, { id: socket.id });
 		for (var i = 0; i < players.length; i++) {
 			if (players[i].id == socket.id) {
 				players.splice(i, 1);
